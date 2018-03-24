@@ -6,6 +6,7 @@ exports.create = (req,res) => {
     cloudinary.uploader.upload(req.files.cover.path, function(result) { 
         let p = new models.product({
             code:body.code.toLowerCase(),
+            price:body.price.toLowerCase(),
             transa:body.transa.toLowerCase(),
             type:body.type.toLowerCase(),
             region:body.region.toLowerCase(),
@@ -13,11 +14,11 @@ exports.create = (req,res) => {
             title:body.title.toLowerCase(),
             cover:result.secure_url,
             images:[],
-            dormitorios:body.dormitorios,
-            banos:body.banos,
-            meters:body.meters,
-            metersUtils:body.metersUtils,
-            destacado:body.destacado,
+            dormitorios:parseInt(body.dormitorios),
+            banos:parseInt(body.banos),
+            meters:parseInt(body.meters),
+            metersUtils:parseInt(body.metersUtils),
+            destacado:Boolean(body.destacado),
             description:body.description,
             estracto:body.estracto
         });
@@ -33,12 +34,9 @@ exports.create = (req,res) => {
 }
 
 exports.addGallery = (req,res) => {
-    let filename = req.files.image.path;
-    cloudinary.uploader.upload(`${filename}`, function(result) { 
-        let imageGallery = result.secure_url;
-
+    cloudinary.uploader.upload(req.files.image.path, function(result) { 
         models.product.findByIdAndUpdate(req.params.id,
-            {$push: {"images": imageGallery}},
+            {$push: {"images": {img:result.secure_url}}},
             {safe: true, upsert: true},
             function(err, response) {
                 if(err) {
@@ -143,20 +141,20 @@ exports.delete = (req,res) => {
 }
 
 exports.update = (req,res) => {
-
-    let data = new Model({
+    let body = req.body;
+    let data = new models.product({
         _id: req.params.id,
-        code:body.code.toLowerCase(),
+        price:body.price.toLowerCase(),
         transa:body.transa.toLowerCase(),
         type:body.type.toLowerCase(),
         region:body.region.toLowerCase(),
         comuna:body.comuna.toLowerCase(),
         title:body.title.toLowerCase(),
-        dormitorios:body.dormitorios,
-        banos:body.banos,
-        meters:body.meters,
-        metersUtils:body.metersUtils,
-        destacado:body.destacado,
+        dormitorios:parseInt(body.dormitorios),
+        banos:parseInt(body.banos),
+        meters:parseInt(body.meters),
+        metersUtils:parseInt(body.metersUtils),
+        destacado:Boolean(body.destacado),
         description:body.description,
         estracto:body.estracto
     });
@@ -169,4 +167,21 @@ exports.update = (req,res) => {
             return res.status(200).json({status:'success'});
         }
     })	
+}
+
+exports.updateCover = (req,res) => {
+    cloudinary.uploader.upload(req.files.cover.path, function(result) { 
+        let p = new models.product({
+            cover:result.secure_url,
+        });
+
+        models.product.update({_id: req.params.id},p,(err,response) =>{
+            if(err){ 
+                return res.status(500).json({status: 'error'});
+            } 
+            else{ 
+                return res.status(200).json({status:'success'});
+            }
+        })	
+    });
 }
